@@ -3,6 +3,7 @@ package it.epicode.entity.entity_dao;
 import it.epicode.entity.Catalogo;
 import it.epicode.entity.Libro;
 import it.epicode.entity.Prestito;
+import it.epicode.entity.exceptions.CatalogoNotFoundException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 
@@ -28,9 +29,13 @@ public class CatalogoDAO {
 
     public Catalogo findByIsbn(String isbn) {
 
-        return em.createQuery("SELECT e FROM Catalogo e WHERE e.isbn = :isbn", Catalogo.class)
+        Catalogo catalogo = em.createQuery("SELECT e FROM Catalogo e WHERE e.isbn = :isbn", Catalogo.class)
                 .setParameter("isbn", isbn)
                 .getSingleResult();
+        if (catalogo == null) {
+            throw new CatalogoNotFoundException("Elemento con ISBN " + isbn + " non trovato.");
+        }
+        return catalogo;
     }
 
     public List<Catalogo> searchByAnnoPubblicazione(int anno) {
@@ -57,7 +62,9 @@ public class CatalogoDAO {
         em.getTransaction().begin();
         Query query = em.createQuery("DELETE FROM Catalogo e WHERE e.isbn = :isbn");
         query.setParameter("isbn", isbn);
-        query.executeUpdate();
+        if(query.executeUpdate() == 0) {
+            throw new CatalogoNotFoundException("Elemento con ISBN " + isbn + " non trovato.");
+        };
         em.getTransaction().commit();
     }
 

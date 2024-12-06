@@ -4,6 +4,9 @@ import it.epicode.entity.entity_dao.CatalogoDAO;
 import it.epicode.entity.entity_dao.PrestitoDAO;
 import it.epicode.entity.entity_dao.UtenteDAO;
 import it.epicode.entity.entity_enum.Periodicita;
+import it.epicode.entity.exceptions.CatalogoNotFoundException;
+import it.epicode.entity.exceptions.PrestitoNotFoundException;
+import it.epicode.entity.exceptions.UtenteNotFoundException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -36,46 +39,50 @@ public class Main {
             int scelta = scanner.nextInt();
             scanner.nextLine(); // Consuma il newline
 
-            switch (scelta) {
-                case 1:
-                    aggiungiElemento();
-                    break;
-                case 2:
-                    rimuoviElemento();
-                    break;
-                case 3:
-                    cercaPerIsbn();
-                    break;
-                case 4:
-                    cercaPerAnno();
-                    break;
-                case 5:
-                    cercaPerAutore();
-                    break;
-                case 6:
-                    cercaPerTitolo();
-                    break;
-                case 7:
-                    cercaPrestitiPerNumeroTessera();
-                    break;
-                case 8:
-                    cercaPrestitiScaduti();
-                    break;
-                case 9:
-                    aggiungiUtente();
-                    break;
-                case 10:
-                    aggiungiPrestito();
-                    break;
-                case 11:
-                    restituisciPrestito();
-                    break;
-                case 12:
-                    System.out.println("Uscita...");
-                    return;
-                default:
-                    System.out.println("Scelta non valida, riprova.");
-                    break;
+            try {
+                switch (scelta) {
+                    case 1:
+                        aggiungiElemento();
+                        break;
+                    case 2:
+                        rimuoviElemento();
+                        break;
+                    case 3:
+                        cercaPerIsbn();
+                        break;
+                    case 4:
+                        cercaPerAnno();
+                        break;
+                    case 5:
+                        cercaPerAutore();
+                        break;
+                    case 6:
+                        cercaPerTitolo();
+                        break;
+                    case 7:
+                        cercaPrestitiPerNumeroTessera();
+                        break;
+                    case 8:
+                        cercaPrestitiScaduti();
+                        break;
+                    case 9:
+                        aggiungiUtente();
+                        break;
+                    case 10:
+                        aggiungiPrestito();
+                        break;
+                    case 11:
+                        restituisciPrestito();
+                        break;
+                    case 12:
+                        System.out.println("Uscita...");
+                        return;
+                    default:
+                        System.out.println("Scelta non valida, riprova.");
+                        break;
+                }
+            } catch (CatalogoNotFoundException | UtenteNotFoundException | PrestitoNotFoundException e) {
+                System.err.println(e.getMessage());
             }
         }
     }
@@ -222,43 +229,51 @@ public class Main {
     }
 
     private static void aggiungiPrestito() {
-        System.out.print("ID Utente: ");
-        Long utenteId = scanner.nextLong();
-        scanner.nextLine();
-        System.out.print("Codice ISBN dell'elemento: ");
-        String isbn = scanner.nextLine();
-        scanner.nextLine();
-        Utente utente = utenteService.findUtenteById(utenteId);
-        Catalogo elemento = catalogoService.findByIsbn(isbn);
-        if (utente == null) {
-            System.out.println("Utente non trovato.");
-            return;
+        try {
+            System.out.print("ID Utente: ");
+            Long utenteId = scanner.nextLong();
+            scanner.nextLine();
+            System.out.print("Codice ISBN dell'elemento: ");
+            String isbn = scanner.nextLine();
+            scanner.nextLine();
+            Utente utente = utenteService.findUtenteById(utenteId);
+            Catalogo elemento = catalogoService.findByIsbn(isbn);
+            if (utente == null) {
+                System.out.println("Utente non trovato.");
+                return;
+            }
+            if (elemento == null) {
+                System.out.println("Elemento non trovato.");
+                return;
+            }
+            Prestito prestito = new Prestito();
+            prestito.setUtente(utente);
+            prestito.setElementoCatalogo(elemento);
+            prestito.setDataInizioPrestito(LocalDate.now());
+            prestito.setDataRestituzionePrevista(LocalDate.now().plusDays(30));
+            prestitoService.save(prestito);
+            System.out.println("Prestito aggiunto con successo!");
+        } catch (PrestitoNotFoundException e) {
+            System.err.println(e.getMessage());
         }
-        if (elemento == null) {
-            System.out.println("Elemento non trovato.");
-            return;
-        }
-        Prestito prestito = new Prestito();
-        prestito.setUtente(utente);
-        prestito.setElementoCatalogo(elemento);
-        prestito.setDataInizioPrestito(LocalDate.now());
-        prestito.setDataRestituzionePrevista(LocalDate.now().plusDays(30));
-        prestitoService.save(prestito);
-        System.out.println("Prestito aggiunto con successo!");
     }
 
     private static void restituisciPrestito() {
-        System.out.print("ID del Prestito: ");
-        Long prestitoId = scanner.nextLong();
-        scanner.nextLine();
-        Prestito prestito = prestitoService.findPrestitoById(prestitoId);
-        if (prestito == null) {
-            System.out.println("Prestito non trovato.");
-            return;
+        try {
+            System.out.print("ID del Prestito: ");
+            Long prestitoId = scanner.nextLong();
+            scanner.nextLine();
+            Prestito prestito = prestitoService.findPrestitoById(prestitoId);
+            if (prestito == null) {
+                System.out.println("Prestito non trovato.");
+                return;
+            }
+            prestito.setDataRestituzioneEffettiva(LocalDate.now());
+            prestitoService.update(prestito);
+            System.out.println("Prestito restituito con successo!");
+        } catch (PrestitoNotFoundException e) {
+            System.err.println(e.getMessage());
         }
-        prestito.setDataRestituzioneEffettiva(LocalDate.now());
-        prestitoService.update(prestito);
-        System.out.println("Prestito restituito con successo!");
     }
 }
 
