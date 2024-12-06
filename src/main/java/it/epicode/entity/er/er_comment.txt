@@ -1,0 +1,5 @@
+
+
+Catalogo ha una relazione 'OneToMany' con Prestito attraverso l'id: elemento_catalogo_id;
+Prestito ha una relazione 'ManyToOne' con utente tramite l'id: utente_id;
+Libro e Rivista estendono la Classe Catalogo e anche loro sono collegati tramite id;
